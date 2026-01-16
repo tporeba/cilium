@@ -173,6 +173,13 @@ func (k LPMKey) EndPort() uint16 {
 	return k.DestPort + uint16(0xffff)>>k.PortPrefixLen()
 }
 
+// Covers returns true if 'k' matches all traffic that 'c' matcches.
+func (k Key) Covers(c Key) bool {
+	return (k.Identity == 0 || k.Identity == c.Identity) &&
+		(k.Nexthdr == 0 || k.Nexthdr == c.Nexthdr) &&
+		(k.PortIsEqual(c) || k.PortIsBroader(c))
+}
+
 // PortProtoIsBroader returns true if the receiver Key has broader
 // port-protocol than the argument Key. That is a port-protocol
 // that covers the argument Key's port-protocol and is larger.

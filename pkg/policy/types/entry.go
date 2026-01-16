@@ -19,6 +19,7 @@ const (
 
 	precedencePriorityShift          = 8
 	precedencePriorityBits           = 32 - precedencePriorityShift
+	MinPriority             Priority = 0
 	MaxPriority             Priority = 1<<precedencePriorityBits - 1
 
 	// Precedence low byte values for entries on the same priority level (bytes 1-3)
@@ -27,6 +28,7 @@ const (
 	precedenceByteAllow Precedence = 1 // Note: proxy redirects use values 2-254
 	precedenceBytePass  Precedence = 0
 
+	MinPrecedence      = Precedence(0)
 	MaxPrecedence      = ^Precedence(0)
 	MaxDenyPrecedence  = MaxPrecedence
 	MaxBasePrecedence  = (MaxPrecedence & ^(precedenceByteMask))
@@ -204,6 +206,11 @@ func (priority Priority) toBasePrecedence() Precedence {
 // PassPrecedence is the precedence with lower 8 bits cleared
 func (priority Priority) ToPassPrecedence() Precedence {
 	return priority.toBasePrecedence()
+}
+
+// ToTierMaxPrecedence is the precedence with lower 8 bits cleared
+func (priority Priority) ToTierMaxPrecedence() Precedence {
+	return priority.toBasePrecedence() | 0xff
 }
 
 // NewMapStateEntry creeates a new MapStateEntry
