@@ -16,14 +16,14 @@ type sprinter interface {
 }
 
 type colorer struct {
-	colors     []*color.Color
-	_sequences []string
-	red        sprinter
-	green      sprinter
-	blue       sprinter
-	cyan       sprinter
-	magenta    sprinter
-	yellow     sprinter
+	colors  []*color.Color
+	seqName string
+	red     sprinter
+	green   sprinter
+	blue    sprinter
+	cyan    sprinter
+	magenta sprinter
+	yellow  sprinter
 }
 
 func newColorer(when string) *colorer {
@@ -58,6 +58,13 @@ func newColorer(when string) *colorer {
 	return c
 }
 
+// globally cached map of possible sequences, introduced for performance reasons, to avoid recalculating it for each colorer instance
+var SEQUENCES = map[string][]string{
+	"auto":   newColorer("auto").calculateSequences(),
+	"never":  newColorer("never").calculateSequences(),
+	"always": newColorer("always").calculateSequences(),
+}
+
 func (c *colorer) auto() {
 	for _, v := range c.colors {
 		if color.NoColor { // NoColor is global and set dynamically
@@ -66,21 +73,21 @@ func (c *colorer) auto() {
 			v.EnableColor()
 		}
 	}
-	c.recalculateSequences()
+	c.seqName = "auto"
 }
 
 func (c *colorer) enable() {
 	for _, v := range c.colors {
 		v.EnableColor()
 	}
-	c.recalculateSequences()
+	c.seqName = "always"
 }
 
 func (c *colorer) disable() {
 	for _, v := range c.colors {
 		v.DisableColor()
 	}
-	c.recalculateSequences()
+	c.seqName = "never"
 }
 
 func (c colorer) port(a any) string {
@@ -124,7 +131,7 @@ func (c colorer) authIsEnabled(a any) string {
 }
 
 // compute the list of unique ANSI escape sequences for this colorer.
-func (c *colorer) recalculateSequences() {
+func (c *colorer) calculateSequences() []string {
 	unique := make(map[string]struct{})
 	for _, v := range c.colors {
 		seq := v.Sprint("|")
@@ -136,9 +143,9 @@ func (c *colorer) recalculateSequences() {
 		unique[split[0]] = struct{}{}
 		unique[split[1]] = struct{}{}
 	}
-	c._sequences = slices.Collect(maps.Keys(unique))
+	return slices.Collect(maps.Keys(unique))
 }
 
 func (c *colorer) sequences() []string {
-	return c._sequences
+	return SEQUENCES[c.seqName]
 }
