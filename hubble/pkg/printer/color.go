@@ -15,14 +15,20 @@ type sprinter interface {
 	Sprint(a ...any) string
 }
 
+type extColor struct {
+	color      *color.Color
+	escapeCode string
+}
+
 type colorer struct {
-	colors  []*color.Color
+	colors  []extColor
 	red     sprinter
 	green   sprinter
 	blue    sprinter
 	cyan    sprinter
 	magenta sprinter
 	yellow  sprinter
+	enabled bool
 }
 
 func newColorer(when string) *colorer {
@@ -42,9 +48,13 @@ func newColorer(when string) *colorer {
 		yellow:  yellow,
 	}
 
-	c.colors = []*color.Color{
-		red, green, blue,
-		cyan, magenta, yellow,
+	c.colors = []extColor{
+		{color: red,     escapeCode: "\x1b[31m"},
+		{color: green,   escapeCode: "\x1b[32m"},
+		{color: blue,    escapeCode: "\x1b[34m"},
+		{color: cyan,    escapeCode: "\x1b[36m"},
+		{color: magenta, escapeCode: "\x1b[35m"},
+		{color: yellow,  escapeCode: "\x1b[33m"},
 	}
 	switch strings.ToLower(when) {
 	case "always":
@@ -60,23 +70,27 @@ func newColorer(when string) *colorer {
 func (c *colorer) auto() {
 	for _, v := range c.colors {
 		if color.NoColor { // NoColor is global and set dynamically
-			v.DisableColor()
+			v.color.DisableColor()
+			c.enabled = false
 		} else {
-			v.EnableColor()
+			v.color.EnableColor()
+			c.enabled = true
 		}
 	}
 }
 
 func (c *colorer) enable() {
 	for _, v := range c.colors {
-		v.EnableColor()
+		v.color.EnableColor()
 	}
+	c.enabled = true
 }
 
 func (c *colorer) disable() {
 	for _, v := range c.colors {
-		v.DisableColor()
+		v.color.DisableColor()
 	}
+	c.enabled = false
 }
 
 func (c colorer) port(a any) string {
@@ -123,14 +137,10 @@ func (c colorer) authIsEnabled(a any) string {
 func (c *colorer) sequences() []string {
 	unique := make(map[string]struct{})
 	for _, v := range c.colors {
-		seq := v.Sprint("|")
-		split := strings.Split(seq, "|")
-		if len(split) != 2 {
-			// should never happen
-			continue
+		if c.enabled {
+			unique[v.escapeCode] = struct{}{}
+			unique["\x1b[0m"] = struct{}{} // reset code
 		}
-		unique[split[0]] = struct{}{}
-		unique[split[1]] = struct{}{}
 	}
 	return slices.Collect(maps.Keys(unique))
 }
