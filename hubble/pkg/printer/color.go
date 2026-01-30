@@ -31,6 +31,13 @@ type colorer struct {
 	enabled bool
 }
 
+func getCode(c *color.Color) string {
+	c.EnableColor()
+	seq := c.Sprint("|")
+	split := strings.Split(seq, "|")
+	return split[0]
+}
+
 func newColorer(when string) *colorer {
 	red := color.New(color.FgRed)
 	green := color.New(color.FgGreen)
@@ -49,12 +56,12 @@ func newColorer(when string) *colorer {
 	}
 
 	c.colors = []extColor{
-		{color: red,     escapeCode: "\x1b[31m"},
-		{color: green,   escapeCode: "\x1b[32m"},
-		{color: blue,    escapeCode: "\x1b[34m"},
-		{color: cyan,    escapeCode: "\x1b[36m"},
-		{color: magenta, escapeCode: "\x1b[35m"},
-		{color: yellow,  escapeCode: "\x1b[33m"},
+		{color: red, escapeCode: getCode(red)},
+		{color: green, escapeCode: getCode(green)},
+		{color: blue, escapeCode: getCode(blue)},
+		{color: cyan, escapeCode: getCode(cyan)},
+		{color: magenta, escapeCode: getCode(magenta)},
+		{color: yellow, escapeCode: getCode(yellow)},
 	}
 	switch strings.ToLower(when) {
 	case "always":
