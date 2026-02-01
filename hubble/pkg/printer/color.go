@@ -120,7 +120,7 @@ func (c colorer) authIsEnabled(a any) string {
 }
 
 // compute the list of unique ANSI escape sequences for this colorer.
-func (c *colorer) sequencesBAD() []string {
+func (c *colorer) sequences() []string {
 	unique := make(map[string]struct{})
 	for _, v := range c.colors {
 		seq := v.Sprint("|")
@@ -129,20 +129,12 @@ func (c *colorer) sequencesBAD() []string {
 			// should never happen
 			continue
 		}
-		unique[split[0]] = struct{}{}
-		unique[split[1]] = struct{}{}
+		if split[0] != "" {
+			unique[split[0]] = struct{}{}
+		}
+		if split[1] != "" {
+			unique[split[1]] = struct{}{}
+		}
 	}
 	return slices.Collect(maps.Keys(unique))
-}
-
-func (c *colorer) sequences() []string {
-    return []string{
-        "\x1b[31m", // red
-        "\x1b[32m", // green
-        "\x1b[34m", // blue
-        "\x1b[36m", // cyan
-        "\x1b[35m", // magenta
-        "\x1b[33m", // yellow
-        "\x1b[0m",  // reset
-    }
 }
